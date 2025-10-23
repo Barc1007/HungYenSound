@@ -25,6 +25,14 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/your-data
     process.exit(1);
   });
 
+// Import routes
+const authRoutes = require('./routes/auth');
+const protectedRoutes = require('./routes/protected');
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/protected', protectedRoutes);
+
 // Basic route
 app.get('/', (req, res) => {
   res.json({ 
