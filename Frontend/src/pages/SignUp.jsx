@@ -1,30 +1,59 @@
 "use client"
 
 import { useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { Music, Eye, EyeOff } from "lucide-react"
+import { useUser } from "../context/UserContext"
 
 export default function SignUp() {
   const [formData, setFormData] = useState({ name: "", email: "", password: "", confirmPassword: "" })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+  const { register, clearError } = useUser()
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
+    if (error) setError("")
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    setIsLoading(true)
+    setError("")
+    clearError()
+
+    // Client-side validation
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!")
+      setError("Passwords do not match!")
+      setIsLoading(false)
       return
     }
     if (formData.password.length < 8) {
-      alert("Password must be at least 8 characters long")
+      setError("Password must be at least 8 characters long")
+      setIsLoading(false)
       return
     }
-    alert("Account created successfully! Redirecting to dashboard...")
-    window.location.href = "/"
+
+    try {
+      const result = await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password
+      })
+
+      if (result.success) {
+        navigate("/")
+      } else {
+        setError(result.error)
+      }
+    } catch (error) {
+      setError("An unexpected error occurred")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -42,6 +71,11 @@ export default function SignUp() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1">Full Name</label>
             <input
@@ -50,7 +84,8 @@ export default function SignUp() {
               value={formData.name}
               onChange={handleChange}
               required
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              disabled={isLoading}
+              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
               placeholder="Hung Yen Ngu"
             />
           </div>
@@ -63,7 +98,8 @@ export default function SignUp() {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              disabled={isLoading}
+              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
               placeholder="your@email.com"
             />
           </div>
@@ -77,7 +113,8 @@ export default function SignUp() {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-10"
+                disabled={isLoading}
+                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-10 disabled:opacity-50"
                 placeholder="••••••••"
               />
               <button
@@ -104,7 +141,8 @@ export default function SignUp() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-10"
+                disabled={isLoading}
+                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-10 disabled:opacity-50"
                 placeholder="••••••••"
               />
               <button
@@ -142,9 +180,10 @@ export default function SignUp() {
 
           <button
             type="submit"
-            className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-lg font-medium transition"
+            disabled={isLoading}
+            className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-600/50 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium transition"
           >
-            Create Account
+            {isLoading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
 

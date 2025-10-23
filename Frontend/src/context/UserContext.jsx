@@ -1,31 +1,123 @@
 "use client"
 
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useState, useEffect } from "react"
+import authService from "../services/authService"
 
 const UserContext = createContext()
 
 export function UserProvider({ children }) {
-  const [user, setUser] = useState({
-    id: 1,
-    name: "John Doe",
-    email: "john@example.com",
-    bio: "Music lover and audio enthusiast",
-    avatar: "/placeholder.svg?height=128&width=128",
-    joinDate: "January 2024",
-    favoriteGenre: "Electronic",
-    playlistCount: 12,
-    followersCount: 342,
-  })
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const updateUser = (updatedData) => {
-    setUser((prev) => ({ ...prev, ...updatedData }))
+  // Check if user is logged in on app start
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        if (authService.isAuthenticated()) {
+          const userData = await authService.getCurrentUser()
+          setUser(userData)
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error)
+        // Clear invalid token
+        authService.setToken(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkAuth()
+  }, [])
+
+  const login = async (email, password) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const { user: userData } = await authService.login(email, password)
+      setUser(userData)
+      return { success: true }
+    } catch (error) {
+      setError(error.message)
+      return { success: false, error: error.message }
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const logout = () => {
-    setUser(null)
+  const register = async (userData) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const { user: newUser } = await authService.register(userData)
+      setUser(newUser)
+      return { success: true }
+    } catch (error) {
+      setError(error.message)
+      return { success: false, error: error.message }
+    } finally {
+      setLoading(false)
+    }
   }
 
-  return <UserContext.Provider value={{ user, updateUser, logout }}>{children}</UserContext.Provider>
+  const updateUser = async (updatedData) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const updatedUser = await authService.updateProfile(updatedData)
+      setUser(updatedUser)
+      return { success: true }
+    } catch (error) {
+      setError(error.message)
+      return { success: false, error: error.message }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      setLoading(true)
+      setError(null)
+      await authService.changePassword(currentPassword, newPassword)
+      return { success: true }
+    } catch (error) {
+      setError(error.message)
+      return { success: false, error: error.message }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const logout = async () => {
+    try {
+      await authService.logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setUser(null)
+      setError(null)
+    }
+  }
+
+  const clearError = () => {
+    setError(null)
+  }
+
+  const value = {
+    user,
+    loading,
+    error,
+    login,
+    register,
+    updateUser,
+    changePassword,
+    logout,
+    clearError,
+    isAuthenticated: !!user
+  }
+
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>
 }
 
 export function useUser() {

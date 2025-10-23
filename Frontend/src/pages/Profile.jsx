@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom"
 import Navbar from "../components/Navbar"
 import Footer from "../components/Footer"
 import AudioPlayer from "../components/AudioPlayer"
+import ChangePasswordModal from "../components/ChangePasswordModal"
 import { useUser } from "../context/UserContext"
 
 export default function Profile() {
@@ -14,6 +15,7 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState(user)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
 
   useEffect(() => {
     setFormData(user)
@@ -24,11 +26,18 @@ export default function Profile() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSave = () => {
-    updateUser(formData)
-    setIsEditing(false)
-    setSaveSuccess(true)
-    setTimeout(() => setSaveSuccess(false), 3000)
+  const handleSave = async () => {
+    const result = await updateUser({
+      name: formData.name,
+      bio: formData.bio,
+      favoriteGenre: formData.favoriteGenre
+    })
+    
+    if (result.success) {
+      setIsEditing(false)
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    }
   }
 
   const handleCancel = () => {
@@ -203,7 +212,10 @@ export default function Profile() {
               <Music className="w-4 h-4 mr-2" />
               Manage My Playlists
             </Link>
-            <button className="w-full text-left px-4 py-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition text-slate-300 hover:text-white">
+            <button 
+              onClick={() => setShowChangePasswordModal(true)}
+              className="w-full text-left px-4 py-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition text-slate-300 hover:text-white"
+            >
               Change Password
             </button>
             <button className="w-full text-left px-4 py-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition text-slate-300 hover:text-white">
@@ -227,6 +239,10 @@ export default function Profile() {
       </main>
       <Footer />
       <AudioPlayer />
+      <ChangePasswordModal 
+        isOpen={showChangePasswordModal} 
+        onClose={() => setShowChangePasswordModal(false)} 
+      />
     </div>
   )
 }
