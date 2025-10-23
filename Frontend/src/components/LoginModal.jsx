@@ -2,16 +2,32 @@
 
 import { useState } from "react"
 import { X, Eye, EyeOff } from "lucide-react"
+import { useAuth } from "../context/AuthContext"
 
 export default function LoginModal({ isOpen, onClose }) {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const { login } = useAuth()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    alert("Login functionality would be implemented here")
-    onClose()
+    setLoading(true)
+    setError("")
+
+    const result = await login(email, password)
+    
+    if (result.success) {
+      onClose()
+      setEmail("")
+      setPassword("")
+    } else {
+      setError(result.message)
+    }
+    
+    setLoading(false)
   }
 
   if (!isOpen) return null
@@ -27,6 +43,11 @@ export default function LoginModal({ isOpen, onClose }) {
           <p className="text-slate-300 mt-2">Sign in to continue</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
             <input
@@ -34,7 +55,8 @@ export default function LoginModal({ isOpen, onClose }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              disabled={loading}
+              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
               placeholder="your@email.com"
             />
           </div>
@@ -46,7 +68,8 @@ export default function LoginModal({ isOpen, onClose }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-10"
+                disabled={loading}
+                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-10 disabled:opacity-50"
                 placeholder="••••••••"
               />
               <button
@@ -79,9 +102,10 @@ export default function LoginModal({ isOpen, onClose }) {
           </div>
           <button
             type="submit"
-            className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-lg font-medium transition"
+            disabled={loading}
+            className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-600/50 text-white py-3 rounded-lg font-medium transition disabled:cursor-not-allowed"
           >
-            Sign In
+            {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
         <div className="mt-6 text-center">

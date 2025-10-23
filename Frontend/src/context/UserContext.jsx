@@ -1,28 +1,16 @@
 "use client"
 
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext } from "react"
+import { useAuth } from "./AuthContext"
 
 const UserContext = createContext()
 
 export function UserProvider({ children }) {
-  const [user, setUser] = useState({
-    id: 1,
-    name: "John Doe",
-    email: "john@example.com",
-    bio: "Music lover and audio enthusiast",
-    avatar: "/placeholder.svg?height=128&width=128",
-    joinDate: "January 2024",
-    favoriteGenre: "Electronic",
-    playlistCount: 12,
-    followersCount: 342,
-  })
+  const { user, updateProfile, logout } = useAuth()
 
-  const updateUser = (updatedData) => {
-    setUser((prev) => ({ ...prev, ...updatedData }))
-  }
-
-  const logout = () => {
-    setUser(null)
+  const updateUser = async (updatedData) => {
+    const result = await updateProfile(updatedData)
+    return result
   }
 
   return <UserContext.Provider value={{ user, updateUser, logout }}>{children}</UserContext.Provider>
